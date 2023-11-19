@@ -1,0 +1,28 @@
+<div
+    style="width: 100vw;display: flex;flex-direction: column;justify-content: center;align-items: center;">
+    <div class="flex flex-col justify-center items-center">
+        <span class="text-3xl font-bold text-orange-500 mt-10">{{ nameCountry }}</span>
+    </div>
+
+    <div class="flex flex-row gap-2.5 my-5">
+        <div
+            class="h-16 w-56 flex flex-col justify-center items-center border border-black rounded">
+            <span>Nombre de participations</span>
+            <span style="font-weight: bold;"> {{ entriesPerCountry }}</span>
+        </div>
+        <div
+            class="h-16 w-56 flex flex-col justify-center items-center border border-black rounded">
+            <span>nombre total de médailles</span>
+            <span style="font-weight: bold;">{{ medalsPerCountry }}</span>
+        </div>
+        <div
+            class="h-16 w-56 flex flex-col justify-center items-center border border-black rounded">
+            <span>nombre total d'athlètes</span>
+            <span style="font-weight: bold;"> {{ athletePerCountry }}</span>
+        </div>
+    </div>
+    <div class="chart-container"
+        class="flex flex-col justify-center items-center">
+        <canvas id="barCanvas2" aria-label="chart" role="img"></canvas>
+    </div>
+</div>

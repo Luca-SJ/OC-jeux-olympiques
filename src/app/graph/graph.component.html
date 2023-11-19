@@ -1,0 +1,25 @@
+<div
+    style="width: 100vw;display: flex;flex-direction: column;justify-content: center;align-items: center;">
+    <div class="flex flex-col justify-center items-center">
+        <span class="text-xl font-bold text-orange-500">JEUX OLYMPIQUES</span>
+        <span class="text-lg text-orange-500">Médailles par pays</span>
+    </div>
+
+    <div class="flex flex-row gap-2.5 my-5">
+        <div
+            class="h-16 w-36 flex flex-col justify-center items-center border border-black rounded">
+            <span>Nombre de JO</span>
+            <span style="font-weight: bold;">{{ nbrJO.length }}</span>
+        </div>
+        <div
+            class="h-16 w-36 flex flex-col justify-center items-center border border-black rounded">
+            <span>Nombre de pays</span>
+            <span style="font-weight: bold;">{{ country.length }}</span>
+        </div>
+    </div>
+
+    <div class="chart-container"
+        class="flex flex-col justify-center items-center">
+        <canvas id="barCanvas" aria-label="chart" role="img"></canvas>
+    </div>
+</div>
