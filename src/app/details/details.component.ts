@@ -1,20 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { OlympicService } from '../core/services/olympic.service';
-import { GraphComponent } from '../graph/graph.component';
-import Chart, { Colors } from 'chart.js/auto';
+import { Observable, Subscription } from 'rxjs';
+import Chart, { Colors, elements } from 'chart.js/auto';
+import { Participation } from '../core/models/Participation';
+import { Olympic } from '../core/models/Olympic';
 
 @Component({
   selector: 'app-details',
   templateUrl: './details.component.html',
   styleUrls: ['./details.component.scss']
 })
-export class DetailsComponent implements OnInit {
-  idCountry: any;
+export class DetailsComponent implements OnInit, OnDestroy {
+  idCountry: number = 0;
   nameCountry: string = "";
   medalsPerCountry: number = 0;
   athletePerCountry: number = 0;
-  EntriesPerCountry: any;
+  EntriesPerCountry: Participation[] = [];
   allYearsEntriesPerCountry: number[] = [];
   allMedalsEntriesPerCountry: number[] = [];
 
@@ -23,8 +25,10 @@ export class DetailsComponent implements OnInit {
   nbrJO: number[] = [];
 
   loaded: boolean;
-  items: any;
+  items: Olympic[] = [];
   country: string[] = [];
+
+  olympicObservable: Subscription | undefined;
 
   constructor(private route: ActivatedRoute, private OlympicService: OlympicService) {
     this.loaded = false;
@@ -32,7 +36,11 @@ export class DetailsComponent implements OnInit {
       this.idCountry = params['country'];
     });
   }
-
+  ngOnDestroy(): void {
+    if (this.olympicObservable) {
+      this.olympicObservable.unsubscribe();
+    }
+  }
 
 
   ngOnInit(): void {
@@ -42,24 +50,22 @@ export class DetailsComponent implements OnInit {
 
   getOlympics(): void {
     this.loaded = false;
-    this.OlympicService.getOlympics()
+    this.olympicObservable = this.OlympicService.getOlympics()
       .subscribe(
         items => {
           this.items = items;
 
-          if (this.items) {
-            this.country = this.items.map((item: { country: any; }) => item.country);
+          if (this.items.length > 0) {
+            this.country = this.items.map((item: { country: string; }) => item.country);
             this.nameCountry = this.country[this.idCountry];
-            // console.log(this.country);
-            // console.log(this.nameCountry);
 
-            const participations = this.items.map((item: { participations: any; }) => item.participations);
+            const participations = this.items.map((item: { participations: Participation[]; }) => item.participations);
             const nbrMedailles: number[] = [];
             const nbrAthlete: number[] = [];
 
-            participations.forEach((participation: { medalsCount: any; athleteCount: any; }[]) => {
-              const medailles = participation.map((item: { medalsCount: any; }) => item.medalsCount);
-              const athlete = participation.map((item: { athleteCount: any; }) => item.athleteCount);
+            participations.forEach((participation) => {
+              const medailles = participation.map((item: Participation) => item.medalsCount);
+              const athlete = participation.map((item: Participation) => item.athleteCount);
 
               const sumWithInitial = medailles.reduce(
                 (accumulator, currentValue) => accumulator + currentValue,
@@ -76,30 +82,20 @@ export class DetailsComponent implements OnInit {
 
             this.EntriesPerCountry = participations[this.idCountry];
 
-            this.EntriesPerCountry.forEach((element: any) => {
+            this.EntriesPerCountry.forEach((element: Participation) => {
               const yearrr = element.year;
               const medals = element.medalsCount;
               this.allYearsEntriesPerCountry.push(yearrr);
               this.allMedalsEntriesPerCountry.push(medals);
 
             });
-            // console.log(this.allYearsEntriesPerCountry);
-            // console.log(this.allMedalsEntriesPerCountry);
-            // console.log(nbrYear);
 
             this.entriesPerCountry = participations[this.idCountry].length;
-
-            // console.log(participations[0].length);
-            // console.log(participations[0]);
             this.medalsPerCountry = nbrMedailles[this.idCountry];
             this.athletePerCountry = nbrAthlete[this.idCountry];
 
-            // console.log(this.yearsEntriesPerCountry);
-            // console.log(items);
-            // console.log(nbrMedailles);
-            // console.log(this.nbrJO);
           }
-          // console.log(this.allYearsEntriesPerCountry);
+
           if (this.allYearsEntriesPerCountry?.length > 0) {
             const barChart = new Chart("barCanvas2", {
               type: "line",
@@ -112,17 +108,14 @@ export class DetailsComponent implements OnInit {
               },
               options: {
                 plugins: {
-                    legend: {
-                        display: false,
-                    }
+                  legend: {
+                    display: false,
                   }
                 }
+              }
             })
           }
         });
-
-
   }
-
 }
 
