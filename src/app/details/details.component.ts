@@ -12,14 +12,15 @@ import { Olympic } from '../core/models/Olympic';
   styleUrls: ['./details.component.scss']
 })
 export class DetailsComponent implements OnInit, OnDestroy {
-  idCountry: number = 0;
+  idCountry: string = "";
+  nbrCountry: number = 0;
   nameCountry: string = "";
   medalsPerCountry: number = 0;
   athletePerCountry: number = 0;
   EntriesPerCountry: Participation[] = [];
   allYearsEntriesPerCountry: number[] = [];
   allMedalsEntriesPerCountry: number[] = [];
-
+  nbrJOarray: number[][] = [];
   entriesPerCountry: number = 0;
 
   nbrJO: number[] = [];
@@ -44,78 +45,52 @@ export class DetailsComponent implements OnInit, OnDestroy {
 
 
   ngOnInit(): void {
-    this.getOlympics();
+    this.loadAllDatas();
 
   }
 
-  getOlympics(): void {
-    this.loaded = false;
-    this.olympicObservable = this.OlympicService.getOlympics()
+  getNbMedals(nbMedals: number[]) {
+    if (nbMedals === undefined) {
+      return;
+    }
+    const sumWithInitial = nbMedals.reduce(
+      (accumulator, currentValue) => accumulator + currentValue,
+      0,
+    );
+    return sumWithInitial;
+  }
+
+  getNbAthletes(nbAthletes: number[]) {
+    if (nbAthletes === undefined) {
+      return;
+    }
+    const sumWithInitial = nbAthletes.reduce(
+      (accumulator, currentValue) => accumulator + currentValue,
+      0,
+    );
+    return sumWithInitial;
+  }
+
+  loadAllDatas(): void {
+    this.olympicObservable = this.OlympicService.getMedalsPerCountry(this.idCountry.toString())
       .subscribe(
-        items => {
-          this.items = items;
+        itemsMedals => {
+          if (itemsMedals?.length) {
+            this.nbrJOarray = itemsMedals;
 
-          if (this.items.length > 0) {
-            this.country = this.items.map((item: { country: string; }) => item.country);
-            this.nameCountry = this.country[this.idCountry];
-
-            const participations = this.items.map((item: { participations: Participation[]; }) => item.participations);
-            const nbrMedailles: number[] = [];
-            const nbrAthlete: number[] = [];
-
-            participations.forEach((participation) => {
-              const medailles = participation.map((item: Participation) => item.medalsCount);
-              const athlete = participation.map((item: Participation) => item.athleteCount);
-
-              const sumWithInitial = medailles.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                0,
-              );
-              const sumWithInitial2 = athlete.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                0,
-              );
-              nbrMedailles.push(sumWithInitial);
-              nbrAthlete.push(sumWithInitial2);
-
-            });
-
-            this.EntriesPerCountry = participations[this.idCountry];
-
-            this.EntriesPerCountry.forEach((element: Participation) => {
-              const yearrr = element.year;
-              const medals = element.medalsCount;
-              this.allYearsEntriesPerCountry.push(yearrr);
-              this.allMedalsEntriesPerCountry.push(medals);
-
-            });
-
-            this.entriesPerCountry = participations[this.idCountry].length;
-            this.medalsPerCountry = nbrMedailles[this.idCountry];
-            this.athletePerCountry = nbrAthlete[this.idCountry];
-
-          }
-
-          if (this.allYearsEntriesPerCountry?.length > 0) {
             const barChart = new Chart("barCanvas2", {
               type: "line",
               data: {
-                labels: this.allYearsEntriesPerCountry,
+                labels: itemsMedals[1],
                 datasets: [{
-                  data: this.allMedalsEntriesPerCountry,
+                  label: "Nombre de médailles",
+                  data: itemsMedals[0]
                 }]
-
               },
-              options: {
-                plugins: {
-                  legend: {
-                    display: false,
-                  }
-                }
-              }
             })
           }
-        });
+        }
+      );
   }
 }
 

@@ -14,9 +14,15 @@ import { Olympic } from '../core/models/Olympic';
 
 export class GraphComponent implements OnInit, OnDestroy {
   items: Olympic[] = [];
+
+  countryCollection: string[] | undefined;
+  nbrCountry: number = 0;
+
+  nbrMedailles: number[] = [];
+
   loaded: boolean;
   country: string[] = [];
-  nbrJO: number[] = [];
+  nbrJOarray: number[][] = [];
 
   olympicObservable: Subscription | undefined;
 
@@ -31,66 +37,45 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-
-    this.getOlympics();
+    this.loadAllDatas();
   }
 
-  getOlympics(): void {
-    this.loaded = false;
-    this.olympicObservable = this.OlympicService.getOlympics()
+  loadAllDatas(): void {
+    this.olympicObservable = this.OlympicService.getCountrys()
       .subscribe(
-        items => {
-          this.items = items;
-          if (this.items.length > 0) {
-            this.country = this.items.map((item: { country: string; }) => item.country);
-            const participations = this.items.map((item: { participations: Participation[]; }) => item.participations);
-            const nbrMedailles: number[] = [];
-            const nbrJOarray: number[] = [];
+        itemsCountry => {
+          if (itemsCountry?.length) {
+            this.nbrCountry = itemsCountry?.length;
+            this.countryCollection = itemsCountry;
+            this.olympicObservable = this.OlympicService.getMedalsPerCountry()
+              .subscribe(
+                itemsMedals => {
+                  if (itemsMedals?.length) {
+                    this.nbrJOarray = itemsMedals;
 
-            participations.forEach((participation: { medalsCount: number; }[]) => {
-              const medailles = participation.map((item: { medalsCount: number; }) => item.medalsCount);
-
-              const sumWithInitial = medailles.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                0,
-              );
-              nbrMedailles.push(sumWithInitial);
-
-            });
-
-            participations.forEach((participation: { year: number; }[]) => {
-              const jo = participation.map((item: { year: number; }) => item.year);
-
-              jo.forEach(element => {
-                nbrJOarray.push(element);
-              });
-
-              this.nbrJO = [...new Set(nbrJOarray)];
-
-            });
-
-            const barChart = new Chart("barCanvas", {
-              type: "pie",
-              data: {
-                labels: this.country,
-                datasets: [{
-                  data: nbrMedailles,
-                }]
-
-              },
-              options: {
-                onClick: function (evt, element) {
-                  if (element.length > 0) {
-                    const indexCountry = element.map((item: { index: number; }) => item.index);
-                    window.location.href = "/country-details?country=" + indexCountry[0];
+                    const barChart = new Chart("barCanvas", {
+                      type: "pie",
+                      data: {
+                        labels: this.countryCollection,
+                        datasets: [{
+                          data: itemsMedals[0]
+                        }]
+                      },
+                      options: {
+                        onClick: (evt, element) => {
+                          if (element.length > 0) {
+                            const indexCountry = element.map((item: { index: number; }) => item.index);
+                            const countryName = this.countryCollection? this.countryCollection[indexCountry[0]]:"";
+                            window.location.href = "/country-details?country=" + (countryName);
+                          }
+                        }
+                      }
+                    })
                   }
                 }
-              }
-            })
-
+              );
           }
-        });
+        }
+      );
   }
-
-
 }
