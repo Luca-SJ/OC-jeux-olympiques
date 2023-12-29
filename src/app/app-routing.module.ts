@@ -6,10 +6,6 @@ import { GraphComponent } from './graph/graph.component';
 import { DetailsComponent } from './details/details.component';
 
 const routes: Routes = [
-  // {
-  //   path: '',
-  //   component: HomeComponent,
-  // },
   {
     path: '',
     component: GraphComponent,
@@ -19,7 +15,7 @@ const routes: Routes = [
     component: DetailsComponent,
   },
   {
-    path: '**', // wildcard
+    path: '**',
     component: NotFoundComponent,
   },
 ];

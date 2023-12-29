@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import Chart, { Colors } from 'chart.js/auto';
 import { OlympicService } from '../core/services/olympic.service';
+import { Observable, Subscription } from 'rxjs';
+import { Participation } from '../core/models/Participation';
+import { Olympic } from '../core/models/Olympic';
 
 
 @Component({
@@ -8,104 +11,71 @@ import { OlympicService } from '../core/services/olympic.service';
   templateUrl: './graph.component.html',
   styleUrls: ['./graph.component.scss']
 })
-export class GraphComponent implements OnInit {
-  items: any;
+
+export class GraphComponent implements OnInit, OnDestroy {
+  items: Olympic[] = [];
+
+  countryCollection: string[] | undefined;
+  nbrCountry: number = 0;
+
+  nbrMedailles: number[] = [];
+
   loaded: boolean;
   country: string[] = [];
-  nbrJO: number[] = [];
-  // pays1 = "test";
+  nbrJOarray: number[][] = [];
+
+  olympicObservable: Subscription | undefined;
 
   constructor(
     private OlympicService: OlympicService) {
     this.loaded = false;
-
-    // interface olympic {
-    //   id: number;
-    //   country: string;
-    // }
+  }
+  ngOnDestroy(): void {
+    if (this.olympicObservable) {
+      this.olympicObservable.unsubscribe();
+    }
   }
 
   ngOnInit(): void {
-
-    this.getOlympics();
-
-    // const barCanvas = document.getElementById("barCanvas");
-    // const barChart = new Chart("barCanvas", {
-    //   type: "pie",
-    //   data: {
-    //     labels: [this.items[0].country, "Italie", "Espagne"],
-    //     datasets: [{
-    //       data: [100, 300, 200]
-    //     }]
-    //   }
-    // })
+    this.loadAllDatas();
   }
 
-  getOlympics(): void {
-    this.loaded = false;
-    this.OlympicService.getOlympics()
+  loadAllDatas(): void {
+    this.olympicObservable = this.OlympicService.getCountrys()
       .subscribe(
-        items => {
-          this.items = items;
-          // this.loaded = true;
-          // console.log(items);
-          console.log(items);
-          if (this.items) {
-            this.country = this.items.map((item: { country: any; }) => item.country);
-            // console.log(this.country);
-            const participations = this.items.map((item: { participations: any; }) => item.participations);
-            const nbrMedailles: number[] = [];
-            const nbrJOarray: number[] = [];
+        itemsCountry => {
+          if (itemsCountry?.length) {
+            this.nbrCountry = itemsCountry?.length;
+            this.countryCollection = itemsCountry;
+            this.olympicObservable = this.OlympicService.getMedalsPerCountry()
+              .subscribe(
+                itemsMedals => {
+                  if (itemsMedals?.length) {
+                    this.nbrJOarray = itemsMedals;
 
-            participations.forEach((participation: { medalsCount: any; }[]) => {
-              const medailles = participation.map((item: { medalsCount: any; }) => item.medalsCount);
-
-              const sumWithInitial = medailles.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                0,
-              );
-              nbrMedailles.push(sumWithInitial);
-
-            });
-
-            participations.forEach((participation: { year: any; }[]) => {
-              const jo = participation.map((item: { year: any; }) => item.year);
-
-              jo.forEach(element => {
-                nbrJOarray.push(element);
-              });
-
-              this.nbrJO = [...new Set(nbrJOarray)];
-              // console.log(this.nbrJO.length);
-
-            });
-
-            // console.log(participations);
-            // console.log(nbrJO);
-            // console.log(medailles);
-            const barChart = new Chart("barCanvas", {
-              type: "pie",
-              data: {
-                labels: this.country,
-                datasets: [{
-                  data: nbrMedailles,
-                }]
-
-              },
-              options: {
-                onClick: function (evt, element) {
-                  if (element.length > 0) {
-                    const indexCountry = element.map((item: { index: any; }) => item.index);
-                    console.log(indexCountry[0]);
-                    window.location.href = "/country-details?country=" + indexCountry[0];
+                    const barChart = new Chart("barCanvas", {
+                      type: "pie",
+                      data: {
+                        labels: this.countryCollection,
+                        datasets: [{
+                          data: itemsMedals[0]
+                        }]
+                      },
+                      options: {
+                        onClick: (evt, element) => {
+                          if (element.length > 0) {
+                            const indexCountry = element.map((item: { index: number; }) => item.index);
+                            const countryName = this.countryCollection? this.countryCollection[indexCountry[0]]:"";
+                            window.location.href = "/country-details?country=" + (countryName);
+                          }
+                        }
+                      }
+                    })
                   }
                 }
-              }
-            })
-
+              );
           }
-        });
+        }
+      );
   }
-
-
 }
